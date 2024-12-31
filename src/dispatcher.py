@@ -10,8 +10,8 @@ class Dispatcher:
     def __init__(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.settimeout(2)
         sock.bind(bind_address)
+        print(f"Dispatcher: Bound to {bind_address}")
 
         try:
             while True:
@@ -26,3 +26,6 @@ class Dispatcher:
         finally:
             print("Dispatcher: closing socket")
             sock.close()
+
+if __name__ == "__main__":
+    Dispatcher()

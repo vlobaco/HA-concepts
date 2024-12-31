@@ -37,3 +37,11 @@ When the dispatcher receives a response, it should print it received a response 
 Once the dispatcher receives a notice that a worker has deactivated, it will update the list of workers, making it available. It should also zero the number of communications from the last activation, and make -1 the time from the last communication.
 
 If 5 seconds pass without any communication, the dispatcher should consider that the worker was terminated and remove it from the list. The dispatcher should inform when it considers that a worker has terminated.
+
+## Implementation
+
+In order to implement the requirements for the serve, I will use a `ThreadingUDPServer` for the worker registration, for the discovery and update of the list of registered workers. The use of threads allow me to interact with the list in the main thread.
+
+I will also use a `ForkingTCPServer`to manage the remaining of the communication, as it will deal with issues only related to each worker (i.e. the alive ping or its responses).
+
+The workers will implement two sockets, one for UDP and another for TCP. Through broadcast/UDP, they will find out the address of the server,and receive the address of the socket assigned to them. Through TCP, they will carry the rest of the communication.
