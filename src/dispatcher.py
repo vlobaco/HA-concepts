@@ -1,31 +1,31 @@
 from os import environ
 from dotenv import load_dotenv
+import json
+import selectors
 import socket
 
 load_dotenv()
-bind_address = ("0.0.0.0", int(environ.get("BROADCAST_PORT")))
+dispatcher_port = int(environ.get("DISPATCHER_PORT"))
 
 class Dispatcher:
 
     def __init__(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.bind(bind_address)
-        print(f"Dispatcher: Bound to {bind_address}")
-
-        try:
+        with socket.create_server(("", dispatcher_port)) as server:
+            server.setblocking(False)
+            server.listen(1)
+            self.selector = selectors.DefaultSelector()
+            self.selector.register(server, selectors.EVENT_READ, self._accept)
+            print(f"Dispatcher listening on port {dispatcher_port}")
             while True:
-                print("Dispatcher: waiting to receive")
-                try:
-                    data, server = sock.recvfrom(4096)
-                except socket.timeout:
-                    print('Dispatcher: Time out, no more responses')
-                    break
-                else:
-                    print(f"Dispatcher: Received '{data}' from {server}")
-        finally:
-            print("Dispatcher: closing socket")
-            sock.close()
+                for key, mask in self.selector.select():
+                    key.data(key.fileobj)
 
-if __name__ == "__main__":
-    Dispatcher()
+    def _accept(self, sock):
+        conn, addr = sock.accept()
+        conn.setblocking(False)
+        self.selector.register(conn, selectors.EVENT_READ, self._read)
+
+    def _read(self, client):
+        message = json.loads(client.recv(1024).decode())
+        ip = client.getpeername()
+        print(f"DISPATCHER | Received message {message['type']} from {ip}")

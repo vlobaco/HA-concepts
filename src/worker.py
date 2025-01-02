@@ -1,30 +1,23 @@
 from os import environ
 from dotenv import load_dotenv
+import json
+import random
 import socket
 import time
 
 load_dotenv()
-broadcast_address = (environ.get("BROADCAST_ADDRESS"), int(environ.get("BROADCAST_PORT")))
+dispatcher_address = ("0.0.0.0", int(environ.get("DISPATCHER_PORT")))
 
 class Worker:
 
     def __init__(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-        try:
-            message = b"Hello There"
-            print(f"Worker: sending '{message}' to {broadcast_address}")
-            message_number = 0
+        self.weight = random.randint(1, 100)
+        with socket.create_connection(dispatcher_address) as sock:
+            print("Worker connected to dispatcher")
+            message = json.dumps({
+                "type": "is_someone_there",
+                "weight": self.weight
+                }).encode()
             while True:
-                message_number += 1
-                message = f"Hello There {message_number}".encode()
-                sock.sendto(message, broadcast_address)
-                time.sleep(1)
-        
-        finally:
-            print("Worker: closing the socket")
-            sock.close()
-
-if __name__ == "__main__":
-    Worker()
+                sock.send(message)
+                time.sleep(5)
