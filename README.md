@@ -12,6 +12,8 @@ The worker will get activated by a message of the dispatcher containing its id (
 
 Once a worker has been activated, it should go to sleep for a random period of time between 1 and 5 seconds. Once the worker is free again, it should communicate the dispatcher with a message i_am_available.
 
+The worker will use heartbeats to check the communication with the dispatcher. If the worker doesn't obtain an answer from the dispatcher five times in a row, it will shut down itself.
+
 ## The Dispatcher
 
 In order to instanciate a worker, the dispatcher should receive the weight the worker took on and assign it an id. This id will be a hash generated from the time.
@@ -24,6 +26,4 @@ The dispatcher will activate a new worker every 2 seconds, if there are any work
 
 In order to activate a worker, the dispatcher will send an activation message instruction "activate".
 
-## Implementation
-
-In order to implement the requirements for the server, I will use a `DefaultSelector`.
+The dispatcher will remove the worker for whom it hasn't received a heartbeat for 45 seconds strait.
